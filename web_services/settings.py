@@ -37,6 +37,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    "codeforces.apps.CodeforcesConfig",
+    "common.apps.CommonConfig"
 ]
 
 MIDDLEWARE = [
