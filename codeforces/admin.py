@@ -40,6 +40,13 @@ class ProblemAdmin(admin.ModelAdmin):
     list_per_page = 15
 
 
+@admin.register(models.ProgrammingLanguage)
+class ProgrammingLanguageAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'website_id')
+    search_fields = ('id', 'name', 'website_id')
+    list_per_page = 20
+
+
 @admin.register(models.Submission)
 class SubmissionAdmin(admin.ModelAdmin):
     list_display = ('id', 'problem', 'user_account', 'programming_language', 'verdict', 'creation_datetime')

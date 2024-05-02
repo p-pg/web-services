@@ -99,11 +99,18 @@ class Problem(models.Model):
         return f'{self.contest or self.problem_set} : {self.name}'
 
 
-class Submission(models.Model):
-    class ProgrammingLanguage(models.IntegerChoices):
-        PYTHON = 1, 'Python'
-        CPP = 2, 'C++'
+class ProgrammingLanguage(models.Model):
+    name = models.CharField(max_length=32)
+    website_id = models.PositiveSmallIntegerField(unique=True)
 
+    class Meta:
+        ordering = ('-id',)
+
+    def __str__(self):
+        return f'{self.name} : {self.website_id}'
+
+
+class Submission(models.Model):
     class Verdict(models.IntegerChoices):
         FAILED = 1, 'Failed'
         PARTIAL = 2, 'Partial'
@@ -141,7 +148,7 @@ class Submission(models.Model):
     id = models.BigIntegerField(primary_key=True)
     problem = models.ForeignKey(Problem, models.CASCADE, 'submissions')
     user_account = models.ForeignKey(UserAccount, models.CASCADE, 'submissions')
-    programming_language = models.PositiveSmallIntegerField(choices=ProgrammingLanguage.choices)
+    programming_language = models.ForeignKey(ProgrammingLanguage, models.SET_NULL, 'submissions', blank=True, null=True)
     verdict = models.PositiveSmallIntegerField(choices=Verdict.choices, blank=True, null=True)
     test_set = models.PositiveSmallIntegerField(choices=TestSet.choices)
     passed_test_count = models.PositiveSmallIntegerField(default=0)
@@ -157,4 +164,4 @@ class Submission(models.Model):
         return f'{self.problem} : {self.user_account}'
 
 
-__all__ = ('UserAccount', 'Tag', 'ProblemSet', 'Contest', 'Problem', 'Submission')
+__all__ = ('UserAccount', 'Tag', 'ProblemSet', 'Contest', 'Problem', 'ProgrammingLanguage', 'Submission')
