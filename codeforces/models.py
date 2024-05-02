@@ -99,4 +99,62 @@ class Problem(models.Model):
         return f'{self.contest or self.problem_set} : {self.name}'
 
 
-__all__ = ('UserAccount', 'Tag', 'ProblemSet', 'Contest', 'Problem')
+class Submission(models.Model):
+    class ProgrammingLanguage(models.IntegerChoices):
+        PYTHON = 1, 'Python'
+        CPP = 2, 'C++'
+
+    class Verdict(models.IntegerChoices):
+        FAILED = 1, 'Failed'
+        PARTIAL = 2, 'Partial'
+        COMPILATION_ERROR = 3, 'Compilation Error'
+        RUNTIME_ERROR = 4, 'Runtime Error'
+        WRONG_ANSWER = 5, 'Wrong Answer'
+        PRESENTATION_ERROR = 6, 'Presentation Error'
+        TIME_LIMIT_EXCEEDED = 7, 'Time Limit Exceeded'
+        MEMORY_LIMIT_EXCEEDED = 8, 'Memory Limit Exceeded'
+        IDLENESS_LIMIT_EXCEEDED = 9, 'Idleness Limit Exceeded'
+        SECURITY_VIOLATED = 10, 'Security Violated'
+        CRASHED = 11, 'Crashed'
+        INPUT_PREPARATION_CRASHED = 12, 'Input Preparation Crashed'
+        CHALLENGED = 13, 'Challenged'
+        SKIPPED = 14, 'Skipped'
+        TESTING = 15, 'Testing'
+        REJECTED = 16, 'Rejected'
+
+    class TestSet(models.IntegerChoices):
+        SAMPLES = 1, 'Samples'
+        PRETESTS = 2, 'Pretests'
+        TESTS = 3, 'Tests'
+        CHALLENGES = 4, 'Challenges'
+        TESTS_1 = 5, 'Tests 1'
+        TESTS_2 = 6, 'Tests 2'
+        TESTS_3 = 7, 'Tests 3'
+        TESTS_4 = 8, 'Tests 4'
+        TESTS_5 = 9, 'Tests 5'
+        TESTS_6 = 10, 'Tests 6'
+        TESTS_7 = 11, 'Tests 7'
+        TESTS_8 = 12, 'Tests 8'
+        TESTS_9 = 13, 'Tests 9'
+        TESTS_10 = 14, 'Tests 10'
+
+    id = models.BigIntegerField(primary_key=True)
+    problem = models.ForeignKey(Problem, models.CASCADE, 'submissions')
+    user_account = models.ForeignKey(UserAccount, models.CASCADE, 'submissions')
+    programming_language = models.PositiveSmallIntegerField(choices=ProgrammingLanguage.choices)
+    verdict = models.PositiveSmallIntegerField(choices=Verdict.choices, blank=True, null=True)
+    test_set = models.PositiveSmallIntegerField(choices=TestSet.choices)
+    passed_test_count = models.PositiveSmallIntegerField(default=0)
+    time_consumed = models.BigIntegerField(help_text='In Milliseconds')
+    memory_consumed = models.BigIntegerField(help_text='In Bytes')
+    points = models.FloatField(blank=True, null=True)
+    creation_datetime = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ('-id',)
+
+    def __str__(self):
+        return f'{self.problem} : {self.user_account}'
+
+
+__all__ = ('UserAccount', 'Tag', 'ProblemSet', 'Contest', 'Problem', 'Submission')
