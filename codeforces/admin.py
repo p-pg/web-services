@@ -1,13 +1,11 @@
 from django.contrib import admin
 from . import models
+from common import admin as common_admin
 
 
-@admin.register(models.UserAccount)
-class UserAccountAdmin(admin.ModelAdmin):
-    list_display = ('id', 'handle', 'email', 'is_verified')
-    list_filter = ('is_verified',)
-    search_fields = ('id', 'handle', 'email')
-    list_per_page = 15
+@admin.register(models.CFBotAccount)
+class CFBotAccountAdmin(common_admin.BotAccountAdmin):
+    pass
 
 
 @admin.register(models.Tag)
@@ -47,13 +45,11 @@ class ProgrammingLanguageAdmin(admin.ModelAdmin):
     list_per_page = 20
 
 
-@admin.register(models.Submission)
-class SubmissionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'problem', 'user_account', 'programming_language', 'verdict', 'creation_datetime')
-    list_filter = ('user_account', 'programming_language', 'verdict')
-    date_hierarchy = 'creation_datetime'
-    list_per_page = 15
-    search_fields = ('id', 'problem__name', 'user_account__email')
+@admin.register(models.CFCodeSubmission)
+class CFCodeSubmissionAdmin(common_admin.CodeSubmissionAdmin):
+    list_display = (*common_admin.CodeSubmissionAdmin.list_display, 'problem', 'programming_language', 'verdict')
+    list_filter = (*common_admin.CodeSubmissionAdmin.list_filter, 'programming_language', 'verdict')
+    search_fields = (*common_admin.CodeSubmissionAdmin.search_fields, 'problem__name')
     raw_id_fields = ('problem',)
 
 

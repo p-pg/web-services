@@ -1,19 +1,12 @@
 from django.db import models
-from common import fields as common_fields
-from django.core.validators import MinLengthValidator, MinValueValidator, MaxValueValidator
+from common import fields as common_fields, models as common_models
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 
-class UserAccount(models.Model):
-    handle = common_fields.ICharField(max_length=64, unique=True)
-    clear_password = models.CharField(validators=(MinLengthValidator(5),), max_length=32)
-    email = common_fields.IEmailField(unique=True)
-    is_verified = models.BooleanField(default=False)
-
-    class Meta:
-        ordering = ('-id',)
-
-    def __str__(self):
-        return f'{self.email} : {self.handle}'
+class CFBotAccount(common_models.BotAccount):
+    @property
+    def profile_url(self):
+        return f'/profile/{self.handle}'
 
 
 class Tag(models.Model):
@@ -110,7 +103,7 @@ class ProgrammingLanguage(models.Model):
         return f'{self.name} : {self.website_id}'
 
 
-class Submission(models.Model):
+class CFCodeSubmission(common_models.CodeSubmission):
     class Verdict(models.IntegerChoices):
         FAILED = 1, 'Failed'
         PARTIAL = 2, 'Partial'
@@ -145,9 +138,7 @@ class Submission(models.Model):
         TESTS_9 = 13, 'Tests 9'
         TESTS_10 = 14, 'Tests 10'
 
-    id = models.BigIntegerField(primary_key=True)
     problem = models.ForeignKey(Problem, models.CASCADE, 'submissions')
-    user_account = models.ForeignKey(UserAccount, models.CASCADE, 'submissions')
     programming_language = models.ForeignKey(ProgrammingLanguage, models.SET_NULL, 'submissions', blank=True, null=True)
     verdict = models.PositiveSmallIntegerField(choices=Verdict.choices, blank=True, null=True)
     test_set = models.PositiveSmallIntegerField(choices=TestSet.choices)
@@ -155,13 +146,9 @@ class Submission(models.Model):
     time_consumed = models.BigIntegerField(help_text='In Milliseconds')
     memory_consumed = models.BigIntegerField(help_text='In Bytes')
     points = models.FloatField(blank=True, null=True)
-    creation_datetime = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ('-id',)
 
-    def __str__(self):
-        return f'{self.problem} : {self.user_account}'
 
-
-__all__ = ('UserAccount', 'Tag', 'ProblemSet', 'Contest', 'Problem', 'ProgrammingLanguage', 'Submission')
+__all__ = ('CFBotAccount', 'Tag', 'ProblemSet', 'Contest', 'Problem', 'ProgrammingLanguage', 'CFCodeSubmission')
