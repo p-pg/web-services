@@ -2,3 +2,4 @@
 venv
 */migrations
 db.sqlite3
+media

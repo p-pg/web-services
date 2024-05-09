@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 from aiohttp import ClientResponse
+from bs4 import BeautifulSoup
 
 if TYPE_CHECKING:
     from common.bot.entities import Bot
@@ -33,24 +34,48 @@ class PageLoadFailed(BotException):
         return f'Loading the page "{self.url}" failed!'
 
 
-class CSRFTokenNotFound(BotException):
-    response: ClientResponse
+class SoupException(BotException):
+    soup: BeautifulSoup
 
-    def __init__(self, response: ClientResponse):
-        self.response = response
+    def __init__(self, soup: BeautifulSoup):
+        self.soup = soup
 
+    def __str__(self):
+        return 'Soup Exception!'
+
+
+class CSRFTokenNotFound(SoupException):
     def __str__(self):
         return 'CSRF Token was not found!'
 
 
-class AuthenticationFailed(BotException):
+class BotAccountException(BotException):
     account: 'BotAccount'
 
     def __init__(self, account: 'BotAccount'):
         self.account = account
 
     def __str__(self):
+        return f'Account Exception on: "{self.account}"!'
+
+
+class AuthenticationFailed(BotAccountException):
+    def __str__(self):
         return f'Authentication failed for: "{self.account.handle}"'
 
 
-__all__ = ('BotException', 'InvalidBotStateException', 'PageLoadFailed')
+class InactiveAccountException(BotAccountException):
+    def __str__(self):
+        return f'Account "{self.account}" is inactive!'
+
+
+__all__ = (
+    'BotException',
+    'InvalidBotStateException',
+    'PageLoadFailed',
+    'SoupException',
+    'CSRFTokenNotFound',
+    'BotAccountException',
+    'AuthenticationFailed',
+    'InactiveAccountException'
+)

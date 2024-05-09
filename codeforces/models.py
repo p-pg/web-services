@@ -141,10 +141,10 @@ class CFCodeSubmission(common_models.CodeSubmission):
     problem = models.ForeignKey(Problem, models.CASCADE, 'submissions')
     programming_language = models.ForeignKey(ProgrammingLanguage, models.SET_NULL, 'submissions', blank=True, null=True)
     verdict = models.PositiveSmallIntegerField(choices=Verdict.choices, blank=True, null=True)
-    test_set = models.PositiveSmallIntegerField(choices=TestSet.choices)
+    test_set = models.PositiveSmallIntegerField(choices=TestSet.choices, blank=True, null=True)
     passed_test_count = models.PositiveSmallIntegerField(default=0)
-    time_consumed = models.BigIntegerField(help_text='In Milliseconds')
-    memory_consumed = models.BigIntegerField(help_text='In Bytes')
+    time_consumed = models.BigIntegerField(help_text='In Milliseconds', blank=True, null=True)
+    memory_consumed = models.BigIntegerField(help_text='In Bytes', blank=True, null=True)
     points = models.FloatField(blank=True, null=True)
 
     class Meta:

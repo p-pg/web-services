@@ -7,7 +7,7 @@ def generate_name(prefix, filename: str):
 
 
 def code_submission_file_name(instance, filename: str):
-    return generate_name('upload-required-documents/', filename)
+    return generate_name('code-submissions/', filename)
 
 
 __all__ = ('generate_name', 'code_submission_file_name')
