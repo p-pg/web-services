@@ -4,18 +4,18 @@ from codeforces import models
 from common.bot import exceptions as common_exceptions, entities as common_entities
 from bs4 import BeautifulSoup
 from django.db import IntegrityError
+from django.core.management import BaseCommand
 
 
 class CFBot(common_entities.Bot):
     _logout_url: str | None
 
-    def __init__(self, account: models.CFBotAccount, session: ClientSession):
-        super().__init__(account, session)
+    def __init__(self, account: models.CFBotAccount, session: ClientSession, command: BaseCommand):
+        super().__init__(account, session, command)
         self._logout_url = None
 
     async def login(self):
-        if self._status != CFBot.Status.BEFORE_AUTHENTICATION:
-            raise common_exceptions.InvalidBotStateException(CFBot.Status.BEFORE_AUTHENTICATION, self._status)
+        await super().login()
         self._check_page_load(response := await self._session.get(urls.LOGIN_URL))
         response = await self._session.post(urls.LOGIN_URL, data={
             'csrf_token': self._extract_csrf_token(await self._generate_soup(response)),
@@ -26,7 +26,7 @@ class CFBot(common_entities.Bot):
         })
         self._check_page_load(response)
         self._logout_url = urls.BASE_URL + self._check_authentication(await self._generate_soup(response))
-        await super().login()
+        self._logged_in()
 
     async def logout(self):
         if self._status != CFBot.Status.READY:
@@ -68,7 +68,7 @@ class CFBot(common_entities.Bot):
         )
         return soup
 
-    async def submit_code(self, submission: models.CFCodeSubmission):
+    async def _submit_code(self, submission: models.CFCodeSubmission):
         soup = await self._submit_code_page(*await self._load_submit_page(submission.problem), submission)
         if submission_id := soup.find(class_='view-source'):
             submission.submission_id = submission_id['submissionid']
@@ -81,5 +81,26 @@ class CFBot(common_entities.Bot):
         submission.status = models.CFCodeSubmission.Status.FAILED
         await submission.asave(update_fields=('status',))
 
+    def _get_submissions(self):
+        return models.CFCodeSubmission.objects.filter(
+            bot_account=self._account, status=models.CFCodeSubmission.Status.IN_PROGRESS
+        ).select_related('problem__contest', 'problem__problem_set', 'programming_language')
 
-__all__ = ('CFBot',)
+
+class CFManager(common_entities.Manager):
+    def _get_active_accounts(self):
+        return models.CFBotAccount.objects.filter(status=models.CFBotAccount.Status.ACTIVE)
+
+    async def _run_bot(self, account: models.CFBotAccount):
+        async with ClientSession() as session:
+            async with CFBot(account, session, self._command) as bot:
+                try:
+                    await bot.run()
+                except common_exceptions.BotException:
+                    pass
+
+    def _get_submissions(self):
+        return models.CFCodeSubmission.objects
+
+
+__all__ = ('CFBot', 'CFManager')

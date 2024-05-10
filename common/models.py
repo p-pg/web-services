@@ -14,7 +14,7 @@ class BotAccount(models.Model):
     clear_password = models.CharField(validators=(MinLengthValidator(5),), max_length=32)
     email = fields.IEmailField(unique=True)
     is_verified = models.BooleanField(default=False)
-    last_activity = models.DateTimeField(default=timezone.now)
+    last_assignment = models.DateTimeField(default=timezone.now)
     status = models.PositiveSmallIntegerField(choices=Status.choices, default=Status.ACTIVE)
 
     class Meta:
@@ -31,7 +31,7 @@ class CodeSubmission(models.Model):
         FAILED = 3, 'Failed'
         SUBMITTED = 4, 'Submitted'
 
-    user_account = models.ForeignKey(BotAccount, models.CASCADE, 'submissions', blank=True, null=True)
+    bot_account = models.ForeignKey(BotAccount, models.CASCADE, 'submissions', blank=True, null=True)
     file = models.FileField(upload_to=functions.code_submission_file_name)
     status = models.PositiveSmallIntegerField(choices=Status.choices, default=Status.PENDING)
     creation_datetime = models.DateTimeField(auto_now_add=True)
@@ -44,11 +44,11 @@ class CodeSubmission(models.Model):
                 ~models.Q(status=4) & models.Q(submission_id__isnull=True)
             ),
             name='valid_submitted_code'
-        ), models.CheckConstraint(check=(~models.Q(status=1) & models.Q(user_account__isnull=False)) |
-                                  models.Q(status=1, user_account__isnull=True), name='valid_assigned_code'))
+        ), models.CheckConstraint(check=(~models.Q(status=1) & models.Q(bot_account__isnull=False)) |
+                                  models.Q(status=1, bot_account__isnull=True), name='valid_assigned_code'))
 
     def __str__(self):
-        return f'{self.user_account} : {self.id}'
+        return f'{self.bot_account} : {self.id}'
 
 
 __all__ = ('BotAccount',)

@@ -1,5 +1,4 @@
 from typing import TYPE_CHECKING
-from aiohttp import ClientResponse
 from bs4 import BeautifulSoup
 
 if TYPE_CHECKING:
@@ -18,6 +17,8 @@ class InvalidBotStateException(BotException):
 
     def __init__(self, valid_state: 'Bot.Status', current_state: 'Bot.Status'):
         assert valid_state != current_state, 'Valid State and Current State must be different!'
+        self.valid_state = valid_state
+        self.current_state = current_state
 
     def __str__(self):
         return (f'Bot must be in "{self.valid_state.name}" state, '
@@ -64,7 +65,7 @@ class AuthenticationFailed(BotAccountException):
         return f'Authentication failed for: "{self.account.handle}"'
 
 
-class InactiveAccountException(BotAccountException):
+class InactiveAccount(BotAccountException):
     def __str__(self):
         return f'Account "{self.account}" is inactive!'
 
@@ -77,5 +78,5 @@ __all__ = (
     'CSRFTokenNotFound',
     'BotAccountException',
     'AuthenticationFailed',
-    'InactiveAccountException'
+    'InactiveAccount'
 )
