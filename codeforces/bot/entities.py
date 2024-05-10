@@ -69,7 +69,6 @@ class CFBot(common_entities.Bot):
         return soup
 
     async def submit_code(self, submission: models.CFCodeSubmission):
-        await super().submit_code(submission)
         soup = await self._submit_code_page(*await self._load_submit_page(submission.problem), submission)
         if submission_id := soup.find(class_='view-source'):
             submission.submission_id = submission_id['submissionid']

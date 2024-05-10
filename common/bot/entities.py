@@ -78,10 +78,9 @@ class Bot(ABC):
     async def _submit_code_page(self, url: str, soup: BeautifulSoup, submission: models.CodeSubmission):
         pass
 
+    @abstractmethod
     async def submit_code(self, submission: models.CodeSubmission):
-        submission.user_account = self._account
-        submission.status = models.CodeSubmission.Status.IN_PROGRESS
-        await submission.asave(update_fields=('status', 'user_account'))
+        pass
 
     async def logout(self):
         self._status = Bot.Status.LOGGED_OUT
