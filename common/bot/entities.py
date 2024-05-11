@@ -112,7 +112,7 @@ class Bot(ABC):
         self._check_page_load(response)
         return BeautifulSoup(await response.read(), 'html.parser')
 
-    async def check_account(self):
+    async def _check_account(self):
         try:
             await self._account.arefresh_from_db()
         except models.BotAccount.DoesNotExist:
@@ -131,6 +131,7 @@ class Bot(ABC):
                 await self._submit_code(submission)
                 await asyncio.sleep(1)
             await asyncio.sleep(5)
+            await self._check_account()
 
 
 class Manager(ABC):
@@ -178,9 +179,6 @@ class Manager(ABC):
     async def run(self):
         while True:
             active_dict = {active_account.id: active_account async for active_account in self._get_active_accounts()}
-            for key, account in Bot.active_accounts.items():
-                if key not in active_dict:
-                    Bot.inactive_accounts.add(account.id)
             new_accounts = list()
             for key, account in active_dict.items():
                 if key not in Bot.active_accounts:
