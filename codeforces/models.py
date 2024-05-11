@@ -121,6 +121,7 @@ class CFCodeSubmission(common_models.CodeSubmission):
         SKIPPED = 14, 'Skipped'
         TESTING = 15, 'Testing'
         REJECTED = 16, 'Rejected'
+        OK = 17, 'OK'
 
     class TestSet(models.IntegerChoices):
         SAMPLES = 1, 'Samples'
@@ -139,7 +140,7 @@ class CFCodeSubmission(common_models.CodeSubmission):
         TESTS_10 = 14, 'Tests 10'
 
     problem = models.ForeignKey(Problem, models.CASCADE, 'submissions')
-    programming_language = models.ForeignKey(ProgrammingLanguage, models.SET_NULL, 'submissions', blank=True, null=True)
+    programming_language = models.ForeignKey(ProgrammingLanguage, models.CASCADE, 'submissions')
     verdict = models.PositiveSmallIntegerField(choices=Verdict.choices, blank=True, null=True)
     test_set = models.PositiveSmallIntegerField(choices=TestSet.choices, blank=True, null=True)
     passed_test_count = models.PositiveSmallIntegerField(default=0)
@@ -149,6 +150,12 @@ class CFCodeSubmission(common_models.CodeSubmission):
 
     class Meta:
         ordering = ('-id',)
+        constraints = (models.CheckConstraint(check=models.Q(verdict__isnull=True) | (models.Q(
+            verdict__isnull=False,
+            passed_test_count__isnull=False,
+            time_consumed__isnull=False,
+            memory_consumed__isnull=False
+        )), name='valid_submission_result'),)
 
 
 __all__ = ('CFBotAccount', 'Tag', 'ProblemSet', 'Contest', 'Problem', 'ProgrammingLanguage', 'CFCodeSubmission')

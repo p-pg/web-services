@@ -34,9 +34,11 @@ class Bot(ABC):
         self._command = command
 
     async def __aenter__(self):
+        self._command.stdout.write(self._command.style.SUCCESS(f'{self._account}: Started.'))
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
+        self._command.stderr.write(self._command.style.NOTICE(f'{self._account}: Stopped!'))
         self.inactive_accounts.discard(self._account.id)
         match exc_type:
             case exceptions.AuthenticationFailed:
@@ -124,12 +126,17 @@ class Bot(ABC):
     def _get_submissions(self):
         pass
 
+    @abstractmethod
+    async def _get_submissions_result(self):
+        pass
+
     async def run(self):
         await self.login()
         while self._account.id not in self.inactive_accounts:
             async for submission in self._get_submissions():
                 await self._submit_code(submission)
                 await asyncio.sleep(1)
+            await self._get_submissions_result()
             await asyncio.sleep(5)
             await self._check_account()
 

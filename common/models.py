@@ -30,6 +30,7 @@ class CodeSubmission(models.Model):
         IN_PROGRESS = 2, 'In Progress'
         FAILED = 3, 'Failed'
         SUBMITTED = 4, 'Submitted'
+        RESULT_NOT_FOUND = 5, 'Result Not Found'
 
     bot_account = models.ForeignKey(BotAccount, models.CASCADE, 'submissions', blank=True, null=True)
     file = models.FileField(upload_to=functions.code_submission_file_name)

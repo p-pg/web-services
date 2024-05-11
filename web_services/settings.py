@@ -125,3 +125,7 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_ROOT = BASE_DIR / 'media'
 MEDIA_URL = '/media/'
+
+# Limits
+CODEFORCES_SEARCH_COUNT = 15
+CODEFORCES_SEARCH_RETRY_COUNT = 2

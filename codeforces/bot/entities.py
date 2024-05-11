@@ -4,7 +4,10 @@ from codeforces import models
 from common.bot import exceptions as common_exceptions, entities as common_entities
 from bs4 import BeautifulSoup
 from django.db import IntegrityError
+from django.db.models import Q
 from django.core.management import BaseCommand
+from django.conf import settings
+from math import ceil
 
 
 class CFBot(common_entities.Bot):
@@ -75,16 +78,62 @@ class CFBot(common_entities.Bot):
             submission.status = models.CFCodeSubmission.Status.SUBMITTED
             try:
                 await submission.asave(update_fields=('status', 'submission_id'))
+                self._command.stdout.write(
+                    self._command.style.SUCCESS(f'{self._account}: Submission Completed: "{submission.id}".')
+                )
                 return
             except IntegrityError:
                 submission.submission_id = None
         submission.status = models.CFCodeSubmission.Status.FAILED
         await submission.asave(update_fields=('status',))
+        self._command.stderr.write(
+            self._command.style.NOTICE(f'{self._account}: Submission Failed: "{submission.id}"!')
+        )
 
     def _get_submissions(self):
         return models.CFCodeSubmission.objects.filter(
             bot_account=self._account, status=models.CFCodeSubmission.Status.IN_PROGRESS
         ).select_related('problem__contest', 'problem__problem_set', 'programming_language')
+
+    async def _get_submissions_result(self):
+        if not (submissions := {submission.submission_id: submission async for submission in
+                models.CFCodeSubmission.objects.filter(
+                    Q(verdict=models.CFCodeSubmission.Verdict.TESTING) | Q(verdict__isnull=True),
+                    status=models.CFCodeSubmission.Status.SUBMITTED
+                )}):
+            return
+        self._command.stdout.write(self._command.style.SUCCESS(f'{self._account}: Getting submissions result.'))
+        current_offset = 1
+        current_tries = - (ceil(len(submissions) / settings.CODEFORCES_SEARCH_COUNT))
+        while submissions and current_tries <= settings.CODEFORCES_SEARCH_RETRY_COUNT:
+            if (response := await self._session.get(
+                urls.generate_user_status_url(self._account.handle, current_offset, settings.CODEFORCES_SEARCH_COUNT)
+            )).status != 200:
+                raise common_exceptions.PageLoadFailed(str(response.url))
+            if not (results := (await response.json())['result']):
+                break
+            for result in results:
+                if not (submission := submissions.get(result['id'])):
+                    continue
+                if not (verdict := result.get('verdict')):
+                    del submissions[result['id']]
+                    continue
+                submission.verdict = models.CFCodeSubmission.Verdict[verdict]
+                submission.passed_test_count = result['passedTestCount']
+                submission.test_set = models.CFCodeSubmission.TestSet[result['testset']]
+                submission.time_consumed = result['timeConsumedMillis']
+                submission.memory_consumed = result['memoryConsumedBytes']
+                submission.points = result.get('points')
+                await submission.asave(update_fields=(
+                    'verdict', 'passed_test_count', 'test_set', 'time_consumed', 'memory_consumed', 'points'
+                ))
+                del submissions[result['id']]
+            current_offset += settings.CODEFORCES_SEARCH_COUNT
+            current_tries += 1
+        await models.CFCodeSubmission.objects.filter(submission_id__in=submissions.keys()).aupdate(
+            status=models.CFCodeSubmission.Status.RESULT_NOT_FOUND
+        )
+        self._command.stdout.write(self._command.style.SUCCESS(f'{self._account}: Received submissions result.'))
 
 
 class CFManager(common_entities.Manager):
@@ -96,8 +145,8 @@ class CFManager(common_entities.Manager):
             async with CFBot(account, session, self._command) as bot:
                 try:
                     await bot.run()
-                except common_exceptions.BotException:
-                    pass
+                except common_exceptions.BotException as e:
+                    print(str(e))
 
     def _get_submissions(self):
         return models.CFCodeSubmission.objects
